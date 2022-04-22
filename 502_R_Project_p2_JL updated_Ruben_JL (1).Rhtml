@@ -1,0 +1,185 @@
+<html> ST502 Final R Project
+
+<p> Part II
+<p> Objective : Conduct a simulation study to compare the hypotheseses testing based on p-value and confidence interval methods, while considering equal and unequal variances in each case.
+
+<p> 1) Define variables
+
+<p> var1 and var2 are the true respective variances for nonsmokers and smokers populations.
+<p> n1 and n2 are the sample sizes for nonsmokers and smokers populations.
+<p> mu1 and mu2 are the respective true means for nonsmokers and smokers populations.
+<p> rez is the possible number of simulation combinations (135 in our case).
+<p> yval1 is a set of 9 random numbers based on  sample n1 and yval2 is as set of 9 ramdom numbers based on sample n2. 
+
+<p> 2) Assign variables
+<!--begin.rcode
+library(dplyr) #opend data treatment package
+library(ggplot2) # open plot package
+
+#set values of parameters 
+var1 <- c(1,4,9)
+var2 <- 1
+
+n1 <- c(10,10,10,30,30,30,70,70,70)
+n2 <- c(10,30,70,10,30,70,10,30,70)
+
+mu1 <- c(20,20,20,21,25)
+mu2 <- c(25,21,20,20,20)
+
+rez <- data.frame(matrix(ncol=7, nrow = 0))
+colnames(rez) <- c('var_1', 'var_2', 'n_1', 'n_2', 'mu_diff', 'alpha1','alpha2')
+end.rcode-->
+
+<p> 3) Code to generate simulation using a loop.
+<!--begin.rcode
+set.seed(458) # getting reproducible random result
+
+# Attribute vector property to random variables for loop
+Tpooled <- vector("numeric",100)
+Tuneq <- vector("numeric",100)
+pval1 <-vector("numeric",100)
+pval2 <-vector("numeric",100)
+LCI_tst1 <- vector("numeric",100)
+UCI_tst1 <- vector("numeric",100)
+LCI_tst2 <- vector("numeric",100)
+UCI_tst2 <- vector("numeric",100)
+rez_grp <- vector("numeric",27)
+for (i in 1:3){
+  for (j in 1:9){
+    for (k in 1:5){
+      #Giving intial values of random variables
+      test1p_reject <- 0
+      test2p_reject <- 0 
+      test1CI_reject <- 0
+      test2CI_reject <- 0
+      mu_diff <- mu1[k] - mu2[k]
+      var_1 <- var1[i]
+      var_2 <- 1
+      n_1 <- n1[j]
+      n_2 <- n2[j]
+    
+       #Using bootstrap to generate 100 samples with identical parameters     to calculate type I error alpha or power 
+      for (m in 1:100){
+
+      #generating the data
+      yval1 <- rnorm(n1[j], mu1[k], sqrt(var1[i]))
+      yval2 <- rnorm(n2[j], mu2[k], sqrt(var2))
+      
+      #calculating values to do pooled t-test
+      Sp2 <- sqrt(((n_1-1)*var(yval1) + (n_2-1)*var(yval2))/(n_1 + n_2-2))
+      Tpooled[m] <- (mean(yval1) - mean(yval2))/(Sp2*sqrt(1/n_1 + 1   /n_2))
+     
+      #calculating p-value corresponding to obtained t value of  pooled t-test
+      pval1[m] <- round(2*pt(abs(Tpooled[m]), df=n_1 + n_2-2,lower.tail = F),4)
+      
+      #counting rejection times of pooled t-test
+      if (pval1[m] <= 0.05){
+        test1p_reject <- test1p_reject+1
+      } 
+     
+      #calculating values to do unequal variances test
+      Tuneq[m] <- (mean(yval1) - mean(yval2))/sqrt(var(yval1)/n_1 + var(yval2)/n_2)
+      v <- (var(yval1)/n_1 + var(yval2)/n_2)**2/((var(yval1)/n_1)**2/(n_1 - 1)
+          + (var(yval2)/n_2)**2/(n_2 - 1)) #using Satterthwaite's approx
+      
+        #calculating p-value corresponding to obtained t value of  unequal variances test
+      pval2[m] <- round(2*pt(abs(Tuneq[m]), df=v, lower.tail = F),4)
+      
+      #counting rejection times of unequal variances test
+      if (pval2[m] < 0.05){
+        test2p_reject <-test2p_reject + 1} 
+      
+      }
+      #calculating alpha values from counted rejections 
+      alpha1 <- test1p_reject/100
+      alpha2 <- test2p_reject/100
+
+    #combine relevant data to create dataset row
+    rez[nrow(rez) + 1,] <- c(var_1, var_2, n_1, n_2, mu_diff,alpha1  ,alpha2)
+    
+    }
+   
+  }
+}
+rez
+end.rcode-->
+
+<!--begin.rcode
+#subseting data  
+
+
+for (i in 1:3) {
+  for (j in 1:9){
+  rez_grp[i,j]<- filter(rez,var_1==i, n_1==j,n_2==j) 
+   g [i,j] <- ggplot(rez_grp[i,j],aes(x=rez$mu_diff)) + 
+   geom_point(aes(y=rez$alpha1), color="red") +
+    geom_point(aes(y=rez$alpha2), color="blue")  
+  }
+}
+
+ g +  facet_wrap(~rez$var_1)
+
+end.rcode-->
+<p> From organized table of null hypothesis, it can be seen that type I error increase with var_1. Expanding sample size reduces type I error. 
+
+
+
+<p> 4) Histograms and Proportions
+
+<p> Note: A binary response was used to differentiate between the rejected tests and the ones we failed to reject.
+<p> A value of 1 means we reject the test.
+<p> A value of 0 means we fail to reject the test.
+
+<p> a) Test 1 : Pooled variance
+
+
+#<!--begin.rcode
+par(mfrow=c(2,1))
+hist(rez$test1_reject,ylim=c(0,140),col= 'lightblue',xlab="Test 1 :Pooled variance",main = 'Rejection based on P-value')
+hist(rez$test1_reject_CI,ylim=c(0,140),col= 'lightblue',main = 'Rejection based on Confidence Interval',xlab= "Test 1 : Pooled variance" )
+
+test1_reject = which(rez$test1_reject==1); l1 = length(test1_reject)
+test1_failtoreject = which(rez$test1_reject==0); l2 = length(test1_failtoreject)
+rbind(c('reject_test1','failtoreject_test1'),c(l1,l2))
+
+test1_reject_CI = which(rez$test1_reject_CI==1); l1 =length(test1_reject_CI)
+test1_failtoreject_CI = which(rez$test1_reject_CI==0); l2= length(test1_failtoreject_CI)
+rbind(rbind(c('reject_test1_CI','failtoreject_test1_CI'),c(l1,l2)))
+end.rcode-->
+
+<p> Based on the above figures, one can notice on the p-value plot, that the proportion of the test, assuming equality of variances,that was rejected is less compared to the proportion of the test that was failed to be rejected. 13 out of 135(8.39%) tests were rejected, while 122 out of 135(90.37%) tests were failed to be rejected. 
+
+<p> Contrary to the p-value method, all 135 simulations using the confidence interval method were rejected.   
+
+<p> The probability  of making a type-I error in the first case is 8.39% and 100% in the second case.
+
+<p> b) Test2 : Satterthwaite
+#<!--begin.rcode
+par(mfrow=c(2,1))
+hist(rez$test2_reject,ylim=c(0,140),col= 'aquamarine',xlab = "Test 2 : Satterthwaite",main = 'Rejection based on P-value')
+hist(rez$test2_reject_CI,ylim=c(0,140),col= 'aquamarine',main = 'Rejection based on Confidence Interval',xlab= "Test 2 : Satterthwaite")
+
+
+test2_reject = which(rez$test2_reject==1); l1 = length(test2_reject)
+test2_failtoreject = which(rez$test2_reject==0); l2 = length(test2_failtoreject)
+rbind(c('reject_test2','failtoreject_test2'),c(l1,l2))
+
+test2_reject_CI = which(rez$test2_reject_CI==1); l1 =length(test2_reject_CI)
+test2_failtoreject_CI = which(rez$test2_reject_CI==0); l2= length(test2_failtoreject_CI)
+rbind(rbind(c('reject_test2_CI','failtoreject_test2_CI'),c(l1,l2)))
+end.rcode-->
+
+<p> Assuming unequal variances, our simulation of 135 datasets, generated 13 tests that are rejected and 122 that are failed to rejected, using the p-value method.
+
+<p> The confidence interval plot displays a histogram bin of 1 that is higher in proportion than the bin oh 0. We can conclude from, thus, that the amount of tests rejected is higher (126 out of 135 ), compared to the proportion of test that are failed to be rejected(9 out of 135).
+
+<p> In the first case, there is a 9.63% chance of making a type-I error, whereas in the second case the probability is much higher, 93.33%.
+
+<p> Conclusion: In both the Pooled variance and Satterthwaite tests, the hypotesis testing based on the p-value method rejected less tests than the one based on the confidence interval procedure. This makesthe testing based on the pvalue the efficient method of making a smaller Type I error.. 
+
+<!--begin.rcode 
+
+
+end.rcode-->
+
+

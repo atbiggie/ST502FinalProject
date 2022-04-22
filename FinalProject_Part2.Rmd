@@ -1,0 +1,263 @@
+---
+title: "Part_Two"
+author: "Autumn Biggie, Ruben Sowah, Jingjing Li"
+date: "4/22/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Report Section Here  
+
+When conducting research, it is often the case that the researchers perform a hypothesis test to compare two sample means. However, the best procedure to choose is not always clear. How does each test compare when the null hypothesis, $\mu_1 - \mu_2$, is false? Do the power and Type I Error Rates differ based upon differences in variance or sample size? These are the questions we intended to answer in this experiment, employing the use of simulation.  
+
+The hypothesis testing procedures in question are both two-sample t tests: the Pooled Variances Test and the Unequal Variances Test. The assumptions of the tests are similar. Both populations are assumed to be Normally distributed with sample sizes $n_1$ and $n_2$ where variances are unknown. The tests diverge in their assumption about the relationship between the variances of each group. The Pooled Variances Test assumes that the populations have equal variance, $\sigma^2$, while the Unequal Variances Test assumes the variances of the populations, $\sigma^2_1$ and $\sigma^2_2$, are unequal.  
+
+We performed a numerical simulation study to compare the two hypothesis testing procedures described above. Simulation studies are appropriate methods of investigation because they allow the researcher to specify the parameters of the population that numerous samples are taken from. This provides the investigator with prior knowledge of the truth or falsehood of the null hypothesis. As many samples are taken from the populations with specified parameters, the rejection rate can be computed as the proportion of times the test rejects the null hypothesis. Since the researcher has prior knowledge of the truth or falsehood of the null hypothesis, the rejection rate can be interpreted as either a Type I Error Rate or Power value. These measures can be compared for each test to assess its reliability under various conditions. Thus, the numerical simulation technique is an effective method to answer the question at hand because it offers the researcher control over specified parameters and can easily produce many samples without vast amounts of time and resources.  
+
+For our simulation study, we varied the true mean difference, sample size, and true variance. The possible values for true mean difference ($\mu_1 - \mu_2$) were -5, -1, 0, 1, and 5. The possible values for sample size were $n_1$ = 10, 30, 70 and $n_2$ = 10, 30, 70. The value of $\sigma^2_2$ was held constant at 1, while $\sigma^2_1$ took on possible values of 1, 4, and 9.  To conduct the study, we created nested for-loops to generate 100 samples for all possible combinations of the above parameters. Both tests were performed on of the generated samples, and alpha and power values were computed. The resulting data set, `rez`, contains the values for the parameters specified, as well as variables `alpha1` and `alpha2`. It is important to note that `alpha1` and `alpha2` do not always refer to the Type I Error Rate, $\alpha$, but only when the null hypothesis $\mu_1 - \mu_2 = 0$ is true. Otherwise, `alpha1` and `alpha2` refer to the power $1 - \beta$ of each test, where `alpha1` corresponds to the **Pooled Variances Test** and `alpha2` corresponds to the **Unequal Variances Test**.  
+
+The results, displayed graphically, reveal clear differences between the performance of the tests under different conditions.  
+
+
+# Corresponding R Code  
+
+**Objective**: Conduct a simulation study to compare the Type I Error Rate and Power of two hypothesis testing procedures under various conditions. The procedures to be tested include:
+  * Pooled Variance Test  
+  * Unequal Variance Test  
+
+
+1) Define variables
+
+  * `var1` and `var2` are the true respective variances for nonsmokers and smokers populations.  
+  * `n1` and `n2` are the sample sizes for nonsmokers and smokers populations.  
+  * `mu1` and `mu2` are the respective true means for nonsmokers and smokers populations.  
+  * `rez` is the possible number of simulation combinations (135 in our case).  
+  * `yval1` is a set of 9 random numbers based on  sample n1 and yval2 is as set of 9 ramdom numbers based on sample n2.   
+  
+  
+
+## Assign variables  
+
+The following variables will be used to set conditions for the simulation. We'll be adjusting the values of variance for each group, as well as sample size and mean.  
+
+
+```{r}
+#set values of parameters 
+var1 <- c(1,4,9)
+var2 <- 1
+
+n1 <- c(10,10,10,30,30,30,70,70,70)
+n2 <- c(10,30,70,10,30,70,10,30,70)
+
+mu1 <- c(20,20,20,21,25)
+mu2 <- c(25,21,20,20,20)
+
+rez <- data.frame(matrix(ncol=7, nrow = 0))
+colnames(rez) <- c('var_1', 'var_2', 'n_1', 'n_2', 'mu_diff', 'alpha1','alpha2')
+```
+
+
+
+
+## Generate Simulation    
+
+The following loop is used to generate random samples from the Normal distribution using all combinations of variance, sample size, and mean defined above. We also compute variables named `alpha1` and `alpha2`. It is important to note that `alpha1` and `alpha2` do not always refer to the Type I Error Rate, $\alpha$, but only when the null hypothesis $\mu_1 - \mu_2 = 0$ is true. Otherwise, `alpha1` and `alpha2` refer to the power $1 - \beta$ of each test, where `alpha1` corresponds to the **Pooled Variance Test** and `alpha2` corresponds to the **Unequal Variances Test**.  
+
+
+```{r}
+set.seed(458) # getting reproducible random result
+
+# Attribute vector property to random variables for loop
+Tpooled <- vector("numeric",100)
+Tuneq <- vector("numeric",100)
+pval1 <-vector("numeric",100)
+pval2 <-vector("numeric",100)
+LCI_tst1 <- vector("numeric",100)
+UCI_tst1 <- vector("numeric",100)
+LCI_tst2 <- vector("numeric",100)
+UCI_tst2 <- vector("numeric",100)
+rez_grp <- vector("numeric",27)
+for (i in 1:3){
+  for (j in 1:9){
+    for (k in 1:5){
+      #Giving intial values of random variables
+      test1p_reject <- 0
+      test2p_reject <- 0 
+      test1CI_reject <- 0
+      test2CI_reject <- 0
+      mu_diff <- mu1[k] - mu2[k]
+      var_1 <- var1[i]
+      var_2 <- 1
+      n_1 <- n1[j]
+      n_2 <- n2[j]
+    
+       #Using bootstrap to generate 100 samples with identical parameters     to calculate type I error alpha or power 
+      for (m in 1:100){
+
+      #generating the data
+      yval1 <- rnorm(n1[j], mu1[k], sqrt(var1[i]))
+      yval2 <- rnorm(n2[j], mu2[k], sqrt(var2))
+      
+      #calculating values to do pooled t-test
+      Sp2 <- sqrt(((n_1-1)*var(yval1) + (n_2-1)*var(yval2))/(n_1 + n_2-2))
+      Tpooled[m] <- (mean(yval1) - mean(yval2))/(Sp2*sqrt(1/n_1 + 1   /n_2))
+     
+      #calculating p-value corresponding to obtained t value of  pooled t-test
+      pval1[m] <- round(2*pt(abs(Tpooled[m]), df=n_1 + n_2-2,lower.tail = F),4)
+      
+      #counting rejection times of pooled t-test
+      if (pval1[m] <= 0.05){
+        test1p_reject <- test1p_reject+1
+      } 
+     
+      #calculating values to do unequal variances test
+      Tuneq[m] <- (mean(yval1) - mean(yval2))/sqrt(var(yval1)/n_1 + var(yval2)/n_2)
+      v <- (var(yval1)/n_1 + var(yval2)/n_2)**2/((var(yval1)/n_1)**2/(n_1 - 1)
+          + (var(yval2)/n_2)**2/(n_2 - 1)) #using Satterthwaite's approx
+      
+        #calculating p-value corresponding to obtained t value of  unequal variances test
+      pval2[m] <- round(2*pt(abs(Tuneq[m]), df=v, lower.tail = F),4)
+      
+      #counting rejection times of unequal variances test
+      if (pval2[m] < 0.05){
+        test2p_reject <-test2p_reject + 1} 
+      
+      }
+      #calculating alpha values from counted rejections 
+      alpha1 <- test1p_reject/100
+      alpha2 <- test2p_reject/100
+
+    #combine relevant data to create dataset row
+    rez[nrow(rez) + 1,] <- c(var_1, var_2, n_1, n_2, mu_diff,alpha1  ,alpha2)
+    
+    }
+   
+  }
+}
+head(rez)
+```
+
+
+
+## Graphical Displays  
+
+We use the following graphical displays to represent the data from our simulation study.  
+
+First, new variables are created to allow for better visualizations.
+
+  * `abs_mu_diff` is the absolute difference of the means from each group  
+  * `abs_var_diff` is the absolute difference of the variances from each group  
+  * `abs_size_diff` is the absolute difference in sample sizes from each group  
+
+These are added to the `rez` data set.  
+
+
+```{r}
+rez <- rez %>% mutate(abs_mu_diff = as.factor(abs(mu_diff)), 
+                      abs_var_diff = as.factor(abs(var_1 - var_2)),
+                      abs_size_diff = as.factor(abs(n_1 - n_2)))
+```
+
+
+### Display Group 1  
+
+This graph shows the probability of rejection (`alpha1`) for the **Pooled Variances Test** as a function of the difference in means, faceted by difference in variance. The results are discussed in the report above.  
+
+
+```{r warning=FALSE}
+abs_var_diff_names <- c("0" = "var_diff = 0", 
+                       "3" = "var_diff = 3", 
+                       "8" = "var_diff = 8")
+vardifflabeller <- function(variable, value){return(abs_var_diff_names[value])}
+
+
+g <- ggplot(rez, aes(x = mu_diff, y = alpha1))
+g + geom_point() + 
+  stat_smooth(geom = "line", alpha = 0.3, color = "#8856a7", size = 1.5) + 
+  ylim(0.0,1.0) + 
+  facet_wrap(~abs_var_diff,
+             labeller = vardifflabeller) + 
+  labs(title = "Pooled Variances Test:",
+       subtitle = "a Comparison of Probability of Rejection over Difference in Variance",
+       x = "Difference in Means",
+       y = "Probability of Rejection")
+```
+
+
+
+
+This graph shows the probability of rejection (`alpha2`) for the **Unequal Variances Test** as a function of the difference in means, faceted by difference in variance. The results are discussed in the report above.  
+
+
+```{r warning=FALSE}
+g1 <- ggplot(rez, aes(x = mu_diff, y = alpha2))
+g1 + geom_point() + 
+  stat_smooth(geom = "line", alpha = 0.5, color = "#9ebcda", size = 1.5) + 
+  ylim(0.0,1.0) + 
+  facet_wrap(~abs_var_diff,
+             labeller = vardifflabeller) + 
+  labs(title = "Unequal Variances Test:",
+       subtitle = "a Comparison of Probability of Rejection over Difference in Variance",
+       x = "Difference in Means",
+       y = "Probability of Rejection")
+```
+
+
+
+### Display Group 2  
+
+
+This graph shows the probability of rejection (`alpha1`) for the **Pooled Variances Test** as a function of the difference in variances, faceted by difference in means. The results are discussed in the report above. Note that the points for `mean_diff = 5` are layered on top of one another, which is why most points in this facet are not visible.  
+
+
+```{r  warning= FALSE}
+abs_mu_diff_names <- c("0" = "mean_diff = 0", 
+                       "1" = "mean_diff = 1", 
+                       "5" = "mean_diff = 5")
+mudifflabeller <- function(variable, value){return(abs_mu_diff_names[value])}
+
+g2 <- ggplot(rez, aes(x = abs_var_diff, y = alpha1, color = abs_size_diff, group = abs_size_diff))
+g2 + geom_point() + 
+  stat_smooth(geom = "line") +
+  ylim(0.0,1.0) +
+  labs(title = "Pooled Variances Test:",
+       subtitle = "a Comparison of Probability of Rejection over Absolute Mean Difference",
+       x = "Absolute Difference in Variance",
+       y = "Probability of Rejection") +
+  scale_color_discrete(name = "Difference in \nSample Size") + 
+  facet_wrap(~abs_mu_diff, 
+             labeller = mudifflabeller)
+```
+
+
+
+This graph shows the probability of rejection (`alpha2`) for the **Unequal Variances Test** as a function of the difference in variances, faceted by difference in means. The results are discussed in the report above. Note that the points for `mean_diff = 5` are layered on top of one another, which is why most points in this facet are not visible.  
+
+
+```{r warning=FALSE}
+g3 <- ggplot(rez, aes(x = abs_var_diff, y = alpha2, color = abs_size_diff, group = abs_size_diff))
+g3 + geom_point() + 
+  stat_smooth(geom = "line") +
+  ylim(0.0,1.0) +
+  labs(title = "Unequal Variances Test:",
+       subtitle = "a Comparison of Probability of Rejection over Absolute Mean Difference",
+       x = "Absolute Difference in Variance",
+       y = "Probability of Rejection") +
+  scale_color_discrete(name = "Difference in \nSample Size") + 
+  facet_wrap(~abs_mu_diff, 
+             labeller = mudifflabeller)
+```
+
+
+
+
+
+
+
+
+
+
