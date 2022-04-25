@@ -253,6 +253,12 @@ g3 + geom_point() +
 ```
 
 
+```{r}
+g  <- ggplot(rez,aes(x=mu_diff)) + 
+   geom_point(aes(y=alpha1), color="red") +
+    geom_point(aes(y=alpha2), color="blue")  
+g +  facet_wrap(rez$n_1+rez$n_2 ~ rez$var_1)
+```
 
 
 
