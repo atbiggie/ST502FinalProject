@@ -139,6 +139,7 @@ for (i in 1:3){
   }
 }
 head(rez)
+rez
 ```
 
 
@@ -254,13 +255,22 @@ g3 + geom_point() +
 
 
 ```{r}
+# plot alpha value against mu_diff at different conditions by combining different variance and sample size.
+
 g  <- ggplot(rez,aes(x=mu_diff)) + 
    geom_point(aes(y=alpha1), color="red") +
     geom_point(aes(y=alpha2), color="blue")  
 g +  facet_wrap(rez$n_1+rez$n_2 ~ rez$var_1)
 ```
 
+### Effect of mean difference
+When  mean difference is -5 or 5 which is far from 0, the power values of both two tests are all equal to 1 regardless of variance and sample size. When difference is -3 or 3, the power value is significantly influenced by sample size.  When sample size of two samples are equal,the power values of both two tests increase with sample .  
 
+### Effect of variance
+Under the same sample size, the power values of both two tests decrease  with rising variance. When var1 (1) is equal to var2 (1), the power values of two tests are equal or very similar, which are less influenced by sample size.  
+
+### Effect of test types
+In the case two sample size are equal, the power values of two tests are equal or very close (The blue dots and red dots overlap). When the size of sample 2 is larger than that of sample 1, the power values of test two (with unequal variance) is greater than that of test one (pooled test). On the other hand, When the size of sample 2 is smaller  than that of sample 1, the power values of test two (with unequal variance) is correspondingly smaller than that of test one (pooled test).
 
 
 
