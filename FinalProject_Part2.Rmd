@@ -1,5 +1,5 @@
 ---
-title: "Part_Two"
+title: "A Simulation Study on the Comparison of Hypothesis Testing Procedures"
 author: "Autumn Biggie, Ruben Sowah, Jingjing Li"
 date: "4/22/2022"
 output: pdf_document
@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-# Report Section Here  
+# Report Section  
 
 When conducting research, it is often the case that the researchers perform a hypothesis test to compare two sample means. However, the best procedure to choose is not always clear. How does each test compare when the null hypothesis, $\mu_1 - \mu_2$, is false? Do the power and Type I Error Rates differ based upon differences in variance or sample size? These are the questions we intended to answer in this experiment, employing the use of simulation.  
 
@@ -20,7 +20,18 @@ We performed a numerical simulation study to compare the two hypothesis testing 
 
 For our simulation study, we varied the true mean difference, sample size, and true variance. The possible values for true mean difference ($\mu_1 - \mu_2$) were -5, -1, 0, 1, and 5. The possible values for sample size were $n_1$ = 10, 30, 70 and $n_2$ = 10, 30, 70. The value of $\sigma^2_2$ was held constant at 1, while $\sigma^2_1$ took on possible values of 1, 4, and 9.  To conduct the study, we created nested for-loops to generate 100 samples for all possible combinations of the above parameters. Both tests were performed on of the generated samples, and alpha and power values were computed. The resulting data set, `rez`, contains the values for the parameters specified, as well as variables `alpha1` and `alpha2`. It is important to note that `alpha1` and `alpha2` do not always refer to the Type I Error Rate, $\alpha$, but only when the null hypothesis $\mu_1 - \mu_2 = 0$ is true. Otherwise, `alpha1` and `alpha2` refer to the power $1 - \beta$ of each test, where `alpha1` corresponds to the **Pooled Variances Test** and `alpha2` corresponds to the **Unequal Variances Test**.  
 
-The results, displayed graphically, reveal clear differences between the performance of the tests under different conditions.  
+The results, displayed graphically, reveal clear differences between the performance of the tests under different conditions. We first discuss our observations from Display Group 1:  
+
+When mean difference is -5 or 5 which is far from 0, the power values of both tests are all equal to 1 regardless of variance and sample size. When difference is -1 or 1, the power value is significantly influenced by sample size. When sample size of two samples are equal,the power values of both tests increase with sample size. Under the same sample size, the power values of both tests decrease with rising variance. When var1 (1) is equal to var2 (1), the power values of the tests are equal or very similar, which are less influenced by sample size. In the case when two sample sizes are equal, the power values of the two tests are equal or very close (the blue dots and red dots overlap). When the size of sample 2 is larger than that of sample 1, the power value of test one (with pooled variance) is greater than that of test two (unequal variances test). On the other hand, When the size of sample 2 is smaller than that of sample 1, the power values of test two (with unequal variance) are correspondingly greater than those of test one (pooled test).
+
+The figures in Display Groups 2 and 3 group the variable combinations by differences in value. For example, instead of displaying the values of `var_1` and `var_2`, observations are grouped by the absolute value of the difference between `var_1` and `var_2`. The purpose is to gain insight into the probability of rejection for each test when at different "distances" between means, variances, and sample sizes. This format also improves graph readability.
+
+Both figures in Display Group 2 reveal that Type 1 Error Rate increases as difference in variance increases. However, this error rate, although increasing, remains more stable for the Unequal Variances Test than the Pooled Variances Test. In addition, the power of both tests decreases as variance increases, but only when the difference in means is 1 or -1. When the difference in means is 5 or -5, the power is 1, presumably because the falsehood of the null hypothesis is so apparent that it would be very difficult for both tests to fail to reject. Although the power of both tests decreases as variance increases, as stated previously, the power values remain slightly more constant for the Unequal Variances test, although the difference is minute. The figures in Display Group 3 allow us to examine this difference more clearly. When the absolute mean difference is 1, the power values of both tests decrease as a function on increasing difference in variance, but there are more low power values for the Pooled Variances Test.
+
+Lastly, the the figures in Display Group 3 clearly show the difference in Type I Error rate discussed previously. When the mean absolute difference is 0 (the null hypothesis is true) and the variances are equal, there is not much difference between the Type I Error Rates of the two tests. However, when variances are unequal, the Type I Error rates of the Pooled Variances Test climb much higher than those of the Unequal Variances Test. The Figures in Display Group 3 plot sample size differences in different colors, but because of the interaction between sample size and test type as they relate to power discussed previously, the output is not very interpretable. Identification of this interaction is one of the advantages of the figure in Display Group 1. 
+
+Based on our investigation, we conclude that generally, the Unequal Variances Test is the better procedure. It yields higher power values and lower Type I Error rates in a variety of circumstances. However, in the case where the difference in means is not 0 and the sample size of group 2 is greater than that of group 1, the Pooled Variance Test is the preferred test because it yields higher power values. We hope this report will both add to the information available on these two procedures as well as the credibility of the simulation study as a method for experimentation.  
+
 
 
 # Corresponding R Code  
@@ -104,7 +115,7 @@ for (i in 1:3){
       
       #calculating values to do pooled t-test
       Sp2 <- sqrt(((n_1-1)*var(yval1) + (n_2-1)*var(yval2))/(n_1 + n_2-2))
-      Tpooled[m] <- (mean(yval1) - mean(yval2))/(Sp2*sqrt(1/n_1 + 1   /n_2))
+      Tpooled[m] <- (mean(yval1) - mean(yval2))/(Sp2*sqrt(1/n_1 + 1/n_2))
      
       #calculating p-value corresponding to obtained t value of  pooled t-test
       pval1[m] <- round(2*pt(abs(Tpooled[m]), df=n_1 + n_2-2,lower.tail = F),4)
@@ -139,7 +150,6 @@ for (i in 1:3){
   }
 }
 head(rez)
-rez
 ```
 
 
@@ -163,8 +173,42 @@ rez <- rez %>% mutate(abs_mu_diff = as.factor(abs(mu_diff)),
                       abs_size_diff = as.factor(abs(n_1 - n_2)))
 ```
 
-
 ### Display Group 1  
+
+This graph shows the probability of rejection for the **Pooled Variances Test** in red and the **Unequal Variances Test** in blue as a function of difference in means, faceted by all possible combinations of `n_1`, `n_2`, and `var_1`. The results are discussed in the report above. 
+
+```{r}
+# plot alpha value against mu_diff at different conditions by combining different variance and sample size.
+rez$n_1 <- as.factor(rez$n_1)
+rez$n_2 <- as.factor(rez$n_2)
+rez$var_1 <- as.factor(rez$var_1)
+
+n1_names <- c("10" = "n1 = 10", 
+                       "30" = "n1 = 30", 
+                       "70" = "n1 = 70")
+n2_names <- c("10" = "n2 = 10", 
+                       "30" = "n2 = 30", 
+                       "70" = "n2 = 70")
+var1_names <- c("1" = "var1 = 1",
+                "4" = "var1 = 4",
+                "9" = "var1 = 9")
+
+g  <- ggplot(rez,aes(x=mu_diff)) + 
+   geom_point(aes(y=alpha1), color="red") +
+    geom_point(aes(y=alpha2), color="blue")  
+g +  facet_wrap(n_1+n_2 ~ var_1,
+                labeller = labeller(n_1 = n1_names, n_2 = n2_names, var_1 = var1_names)) + 
+  theme(strip.text.x = element_text(margin = margin(0, 0, 0, 0))) + 
+  labs(title = "Probability of Rejection Vs. True Difference in Means Over All Possible Conditions",
+       subtitle = "Pooled Variance Test in red, Unequal Variance Test in blue",
+       x = "Difference in Means",
+       y = "Probability of Rejection")
+```
+
+
+
+
+### Display Group 2  
 
 This graph shows the probability of rejection (`alpha1`) for the **Pooled Variances Test** as a function of the difference in means, faceted by difference in variance. The results are discussed in the report above.  
 
@@ -209,7 +253,7 @@ g1 + geom_point() +
 
 
 
-### Display Group 2  
+### Display Group 3  
 
 
 This graph shows the probability of rejection (`alpha1`) for the **Pooled Variances Test** as a function of the difference in variances, faceted by difference in means. The results are discussed in the report above. Note that the points for `mean_diff = 5` are layered on top of one another, which is why most points in this facet are not visible.  
@@ -254,26 +298,8 @@ g3 + geom_point() +
 ```
 
 
-```{r}
-# plot alpha value against mu_diff at different conditions by combining different variance and sample size.
-
-g  <- ggplot(rez,aes(x=mu_diff)) + 
-   geom_point(aes(y=alpha1), color="red") +
-    geom_point(aes(y=alpha2), color="blue")  
-g +  facet_wrap(rez$n_1+rez$n_2 ~ rez$var_1)
-```
-
-### Effect of mean difference
-When  mean difference is -5 or 5 which is far from 0, the power values of both two tests are all equal to 1 regardless of variance and sample size. When difference is -3 or 3, the power value is significantly influenced by sample size.  When sample size of two samples are equal,the power values of both two tests increase with sample .  
-
-### Effect of variance
-Under the same sample size, the power values of both two tests decrease  with rising variance. When var1 (1) is equal to var2 (1), the power values of two tests are equal or very similar, which are less influenced by sample size.  
-
-### Effect of test types
-In the case two sample size are equal, the power values of two tests are equal or very close (The blue dots and red dots overlap). When the size of sample 2 is larger than that of sample 1, the power values of test two (with unequal variance) is greater than that of test one (pooled test). On the other hand, When the size of sample 2 is smaller  than that of sample 1, the power values of test two (with unequal variance) is correspondingly smaller than that of test one (pooled test).
 
 
-
-
+### Member Contributions  
 
 
