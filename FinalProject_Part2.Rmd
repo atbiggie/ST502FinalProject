@@ -5,14 +5,16 @@ date: "4/22/2022"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
 # Report Section  
 
-When conducting research, it is often the case that the researchers perform a hypothesis test to compare two sample means. However, the best procedure to choose is not always clear. How does each test compare when the null hypothesis, $\mu_1 - \mu_2$, is false? Do the power and Type I Error Rates differ based upon differences in variance or sample size? These are the questions we intended to answer in this experiment, employing the use of simulation.  
+As we see in part I, to compare two tests we usually have to make assumptions like normal distribution and equal or unequal variances which may be not true for the population. Furthermore, some parameters are inaccessible or unrealistic to obtain at all, which undoubtedly impedes the efficiency and understanding of the statistic tests. On the other hand, what kinds of test methods are better are often ambiguous. An efficient strategy to address these issues is to use simulation study where you can set desirable distribution and parameters such as mean, variance and sample size and the statistic inference process becomes more concrete for learners. Using simulation method, we can easily generate the data which conform with the requirements of the forementioned two tests and compare the efficiency of the two tests under different parameters. For example, how will two test differs when the null hypothesis, $\mu_1 - \mu_2=0$, is false? How will power and Type I Error will change with variance and sample size? 
+
+For simulation study, we intend to generate two data sets of random samples with predetermined parameters including sample size, mean difference and variance using normal distribution function, `rnorm()`via bootstrap approach. Next, in order to compare the means of two samples, under the null hypothesis (H0), $\mu_1 - \mu_2=0$,  and alternative hypothesis (HA) $\mu_1 - \mu_2 !=0$, we will compute t values using two tests with or without equal variance which are described in part I, count the rejection times and get the rejection ratio  which is can be regarded as type I error (when H0 is true) or power (when HA is true). To compare two test methods, we change the variance, sample size and mean difference and get a series of rejection ratios. 
 
 The hypothesis testing procedures in question are both two-sample t tests: the Pooled Variances Test and the Unequal Variances Test. The assumptions of the tests are similar. Both populations are assumed to be Normally distributed with sample sizes $n_1$ and $n_2$ where variances are unknown. The tests diverge in their assumption about the relationship between the variances of each group. The Pooled Variances Test assumes that the populations have equal variance, $\sigma^2$, while the Unequal Variances Test assumes the variances of the populations, $\sigma^2_1$ and $\sigma^2_2$, are unequal.  
 
@@ -46,8 +48,8 @@ Based on our investigation, we conclude that generally, the Unequal Variances Te
   * `var1` and `var2` are the true respective variances for nonsmokers and smokers populations.  
   * `n1` and `n2` are the sample sizes for nonsmokers and smokers populations.  
   * `mu1` and `mu2` are the respective true means for nonsmokers and smokers populations.  
-  * `rez` is the possible number of simulation combinations (135 in our case).  
-  * `yval1` is a set of 9 random numbers based on  sample n1 and yval2 is as set of 9 ramdom numbers based on sample n2.   
+  * `rez` is the dataset generated using simulation combinations (135 in our case).  
+  * `yval1` is a set of 9 random numbers based on  sample n1 and yval2 is as set of 9 random numbers based on sample n2.   
   
   
 
@@ -56,19 +58,19 @@ Based on our investigation, we conclude that generally, the Unequal Variances Te
 The following variables will be used to set conditions for the simulation. We'll be adjusting the values of variance for each group, as well as sample size and mean.  
 
 
-```{r}
+```{r, echo=FALSE}
 #set values of parameters 
-var1 <- c(1,4,9)
-var2 <- 1
+var1 <- c(1,4,9) #set variance values for sample 1
+var2 <- 1  #set variance values for sample 2
 
-n1 <- c(10,10,10,30,30,30,70,70,70)
-n2 <- c(10,30,70,10,30,70,10,30,70)
+n1 <- c(10,10,10,30,30,30,70,70,70) # set the size of sample 1
+n2 <- c(10,30,70,10,30,70,10,30,70) # set the size of sample 2
 
-mu1 <- c(20,20,20,21,25)
-mu2 <- c(25,21,20,20,20)
+mu1 <- c(20,20,20,21,25) # set the mean value of sample 1
+mu2 <- c(25,21,20,20,20) # set the mean value of sample 2
 
-rez <- data.frame(matrix(ncol=7, nrow = 0))
-colnames(rez) <- c('var_1', 'var_2', 'n_1', 'n_2', 'mu_diff', 'alpha1','alpha2')
+rez <- data.frame(matrix(ncol=7, nrow = 0)) # set the format of the dataset to be generated. 
+colnames(rez) <- c('var_1', 'var_2', 'n_1', 'n_2', 'mu_diff', 'alpha1','alpha2') # Assign the column names to the dataset
 ```
 
 
@@ -79,28 +81,23 @@ colnames(rez) <- c('var_1', 'var_2', 'n_1', 'n_2', 'mu_diff', 'alpha1','alpha2')
 The following loop is used to generate random samples from the Normal distribution using all combinations of variance, sample size, and mean defined above. We also compute variables named `alpha1` and `alpha2`. It is important to note that `alpha1` and `alpha2` do not always refer to the Type I Error Rate, $\alpha$, but only when the null hypothesis $\mu_1 - \mu_2 = 0$ is true. Otherwise, `alpha1` and `alpha2` refer to the power $1 - \beta$ of each test, where `alpha1` corresponds to the **Pooled Variance Test** and `alpha2` corresponds to the **Unequal Variances Test**.  
 
 
-```{r}
+```{r, echo=FALSE}
 set.seed(458) # getting reproducible random result
 
 # Attribute vector property to random variables for loop
-Tpooled <- vector("numeric",100)
-Tuneq <- vector("numeric",100)
-pval1 <-vector("numeric",100)
-pval2 <-vector("numeric",100)
-LCI_tst1 <- vector("numeric",100)
-UCI_tst1 <- vector("numeric",100)
-LCI_tst2 <- vector("numeric",100)
-UCI_tst2 <- vector("numeric",100)
-rez_grp <- vector("numeric",27)
+Tpooled <- vector("numeric",100) #For t test value of pooled method with equal variance 
+Tuneq <- vector("numeric",100) # For t test value of the method with unequal variance 
+pval1 <-vector("numeric",100) # For p-value of pooled method with equal variance 
+pval2 <-vector("numeric",100) # For p-value of the method with unequal variance 
+
+# Generate dataset using nested loops
 for (i in 1:3){
   for (j in 1:9){
     for (k in 1:5){
-      #Giving intial values of random variables
+      #Giving initial values of random variables
       test1p_reject <- 0
       test2p_reject <- 0 
-      test1CI_reject <- 0
-      test2CI_reject <- 0
-      mu_diff <- mu1[k] - mu2[k]
+      mu_diff <- mu1[k] - mu2[k] #the difference of the means of two samples
       var_1 <- var1[i]
       var_2 <- 1
       n_1 <- n1[j]
@@ -110,7 +107,7 @@ for (i in 1:3){
       for (m in 1:100){
 
       #generating the data
-      yval1 <- rnorm(n1[j], mu1[k], sqrt(var1[i]))
+      yval1 <- rnorm(n1[j], mu1[k], sqrt(var1[i])) 
       yval2 <- rnorm(n2[j], mu2[k], sqrt(var2))
       
       #calculating values to do pooled t-test
@@ -167,7 +164,7 @@ First, new variables are created to allow for better visualizations.
 These are added to the `rez` data set.  
 
 
-```{r}
+```{r, echo=FALSE}
 rez <- rez %>% mutate(abs_mu_diff = as.factor(abs(mu_diff)), 
                       abs_var_diff = as.factor(abs(var_1 - var_2)),
                       abs_size_diff = as.factor(abs(n_1 - n_2)))
@@ -177,7 +174,7 @@ rez <- rez %>% mutate(abs_mu_diff = as.factor(abs(mu_diff)),
 
 This graph shows the probability of rejection for the **Pooled Variances Test** in red and the **Unequal Variances Test** in blue as a function of difference in means, faceted by all possible combinations of `n_1`, `n_2`, and `var_1`. The results are discussed in the report above. 
 
-```{r}
+```{r, echo=FALSE}
 # plot alpha value against mu_diff at different conditions by combining different variance and sample size.
 rez$n_1 <- as.factor(rez$n_1)
 rez$n_2 <- as.factor(rez$n_2)
@@ -213,7 +210,7 @@ g +  facet_wrap(n_1+n_2 ~ var_1,
 This graph shows the probability of rejection (`alpha1`) for the **Pooled Variances Test** as a function of the difference in means, faceted by difference in variance. The results are discussed in the report above.  
 
 
-```{r warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 abs_var_diff_names <- c("0" = "var_diff = 0", 
                        "3" = "var_diff = 3", 
                        "8" = "var_diff = 8")
@@ -238,7 +235,7 @@ g + geom_point() +
 This graph shows the probability of rejection (`alpha2`) for the **Unequal Variances Test** as a function of the difference in means, faceted by difference in variance. The results are discussed in the report above.  
 
 
-```{r warning=FALSE}
+```{r warning=FALSE , echo=FALSE }
 g1 <- ggplot(rez, aes(x = mu_diff, y = alpha2))
 g1 + geom_point() + 
   stat_smooth(geom = "line", alpha = 0.5, color = "#9ebcda", size = 1.5) + 
@@ -259,7 +256,7 @@ g1 + geom_point() +
 This graph shows the probability of rejection (`alpha1`) for the **Pooled Variances Test** as a function of the difference in variances, faceted by difference in means. The results are discussed in the report above. Note that the points for `mean_diff = 5` are layered on top of one another, which is why most points in this facet are not visible.  
 
 
-```{r  warning= FALSE}
+```{r  warning= FALSE , echo=FALSE}
 abs_mu_diff_names <- c("0" = "mean_diff = 0", 
                        "1" = "mean_diff = 1", 
                        "5" = "mean_diff = 5")
@@ -283,7 +280,7 @@ g2 + geom_point() +
 This graph shows the probability of rejection (`alpha2`) for the **Unequal Variances Test** as a function of the difference in variances, faceted by difference in means. The results are discussed in the report above. Note that the points for `mean_diff = 5` are layered on top of one another, which is why most points in this facet are not visible.  
 
 
-```{r warning=FALSE}
+```{r warning=FALSE , echo=FALSE}
 g3 <- ggplot(rez, aes(x = abs_var_diff, y = alpha2, color = abs_size_diff, group = abs_size_diff))
 g3 + geom_point() + 
   stat_smooth(geom = "line") +
@@ -302,4 +299,7 @@ g3 + geom_point() +
 
 ### Member Contributions  
 
+
+### References:
+https://www.ime.usp.br/~abe/ICOTS7/Proceedings/PDFs/InvitedPapers/7G2_ERIC.pdf
 
