@@ -284,6 +284,21 @@ g3 + geom_point() +
   facet_wrap(~abs_mu_diff, 
              labeller = mudifflabeller)
 ```
+```{r}
+#subset data under null hypothesis
+rez_null <- filter(rez,mu_diff==0)
+
+#plot the alpha value against variance of sample I under different sample size.
+g <- ggplot (rez_null, aes(x=var_1,y=alpha1)) +
+  geom_point(aes(y=alpha1), color="red") +
+    geom_point(aes(y=alpha2), color="blue")  
+g +  facet_wrap(~n_1+n_2,labeller = labeller(n_1 = n1_names, n_2 = n2_names))  + 
+  theme(strip.text.x = element_text(margin = margin(0, 0, 0, 0))) + 
+  labs(title = "Probability of Rejection Vs. variance of sample 1",
+       subtitle = "Pooled Variance Test in red, Unequal Variance Test in blue",
+       x = "Variance",
+       y = "Probability of Rejection")
+```
 
 ### Member Contributions  
 Autumn Biggie initiated the idea of using nested loop to combine the parameters, built the framework of the data table, generated data sets, calculated t value of two tests calculated, wrote the code for display group 2 and 3, polished the code for group 1, constructed the original report. 
